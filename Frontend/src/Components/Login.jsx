@@ -10,18 +10,24 @@ const Login = () => {
   axios.defaults.withCredentials = true
 
   const handleSubmit = (event) => {
-    event.preventDefault()
-    axios.post(`${import.meta.env.VITE_API_URL}/auth/adminlogin`, values)
-      .then(result => {
-        if (result.data.loginStatus) {
-          localStorage.setItem("valid", true)
-          navigate('/dashboard')
-        } else {
-          setError(result.data.Error)
-        }
-      })
-      .catch(err => console.log(err))
-  }
+  event.preventDefault()
+  axios.post(`${import.meta.env.VITE_API_URL}/auth/adminlogin`, values)
+    .then(result => {
+      if (result.data.loginStatus && result.data.token) {
+        // Save the JWT token to localStorage
+        localStorage.setItem("token", result.data.token)
+        // Optional: store role or flag
+        localStorage.setItem("valid", true)
+        navigate('/dashboard')
+      } else {
+        setError(result.data.Error || "Login failed.")
+      }
+    })
+    .catch(err => {
+      console.log(err)
+      setError("Server error. Try again later.")
+    })
+}
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-500 to-teal-400">
