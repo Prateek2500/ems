@@ -24,12 +24,15 @@ router.post("/employee_login", (req, res) => {
                         "jwt_secret_key",
                         { expiresIn: "1d" }
                     );
-                    res.cookie('token', token);
-                    return res.json({ 
-                        loginStatus: true, 
-                        id: result[0].id,
-                        name: result[0].name
-                    });
+                    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'None' }); // optional for security
+
+return res.json({ 
+  loginStatus: true, 
+  token, // ✅ include the token in JSON response
+  id: result[0].id,
+  name: result[0].name
+});
+
                 } else {
                     return res.json({ loginStatus: false, Error: "Wrong Password" });
                 }
