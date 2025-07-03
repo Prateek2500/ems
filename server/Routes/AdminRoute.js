@@ -419,6 +419,68 @@ router.post('/leave_action', (req, res) => {
   });
 });
 
+// GET all projects with department and manager names
+router.get('/projects', (req, res) => {
+    const sql = `
+        SELECT 
+            p.project_id, p.name, p.description, p.start_date, p.end_date, 
+            p.status, p.budget, p.client_name,
+            d.name AS dept_name,
+            e.name AS manager_name
+        FROM projects p
+        LEFT JOIN dept d ON p.dept_id = d.id
+        LEFT JOIN employee e ON p.manager_id = e.id
+        ORDER BY p.project_id DESC
+    `;
+    con.query(sql, (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.json({ Status: false, Error: "Failed to fetch projects" });
+        }
+        return res.json({ Status: true, Result: result });
+    });
+});
+
+
+// Add a new project
+router.post('/addprojects', (req, res) => {
+    const {
+        name,
+        description,
+        start_date,
+        end_date,
+        dept_id,
+        manager_id,
+        budget,
+        client_name,
+        status
+    } = req.body;
+
+    if (!name || !start_date || !dept_id || !manager_id) {
+        return res.json({ Status: false, Error: "Required fields missing" });
+    }
+
+    const sql = `
+        INSERT INTO projects 
+        (name, description, start_date, end_date, dept_id, manager_id, budget, client_name, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    con.query(
+        sql,
+        [name, description, start_date, end_date, dept_id, manager_id, budget || null, client_name || null, status || 'Not Started'],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.json({ Status: false, Error: "Failed to insert project" });
+            }
+            return res.json({ Status: true, Result: result });
+        }
+    );
+});
+
+
+
 // Logout
 router.get("/logout", (req, res) => {
   res.clearCookie("token");
