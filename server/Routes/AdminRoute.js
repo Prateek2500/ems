@@ -40,8 +40,15 @@ router.post("/adminlogin", (req, res) => {
             "jwt_secret_key",
             { expiresIn: "1d" }
           );
-          res.cookie("token", token);
-          return res.json({ loginStatus: true, id: result[0].id, name: result[0].name });
+          res.cookie("token", token, { httpOnly: true, secure: true, sameSite: 'None' }); // optional security settings
+
+return res.json({ 
+  loginStatus: true, 
+  token,              // ✅ added
+  id: result[0].id, 
+  name: result[0].name 
+});
+
         }
         return res.json({ loginStatus: false, Error: "Wrong password" });
       });
