@@ -12,7 +12,7 @@ const app = express();
 app.use(cors({
   origin: [
     "http://localhost:5173",                 
-    "https://ems-gxs1.onrender.com"       
+    "https://ems-rho-one.vercel.app"       
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true                         
