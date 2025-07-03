@@ -31,7 +31,7 @@ const EditEmployee = () => {
 
   useEffect(() => {
     // Fetch departments
-    axios.get("http://localhost:3000/auth/dept")
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`)
       .then((result) => {
         if (result.data.Status) {
           setDept(result.data.Result);
@@ -42,7 +42,7 @@ const EditEmployee = () => {
       .catch((err) => console.log(err));
 
     // Fetch employee data
-    axios.get("http://localhost:3000/auth/get_employee/" + id)
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/get_employee/` + id)
       .then((result) => {
         setEmployee(result.data.Result[0]);
         setOriginalEmployee(result.data.Result[0]);
@@ -63,7 +63,7 @@ const EditEmployee = () => {
     const changedField = { [selectedField]: employee[selectedField] };
 
     axios
-      .put("http://localhost:3000/auth/edit_employee/" + id, changedField)
+      .put(`${import.meta.env.VITE_API_URL}/auth/edit_employee/` + id, changedField)
       .then((result) => {
         if (result.data.Status) {
           navigate(`/employee_dashboard/employee_detail/${id}`);

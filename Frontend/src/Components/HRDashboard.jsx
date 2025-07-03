@@ -9,7 +9,7 @@ const HRDashboard = () => {
 
   useEffect(() => {
     const id = localStorage.getItem("hr_id");
-    axios.get(`http://localhost:3000/employee/${id}`).then((res) => {
+    axios.get(`${import.meta.env.VITE_API_URL}/employee/${id}`).then((res) => {
       if (res.data.Status) setEmployee(res.data.Result);
     });
   }, []);

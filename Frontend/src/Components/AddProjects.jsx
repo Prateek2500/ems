@@ -16,7 +16,7 @@ const AddProject = () => {
 
     useEffect(() => {
         // Fetch all departments
-        axios.get('http://localhost:3000/auth/dept')
+        axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`)
             .then(result => {
                 if (result.data.Status) {
                     setDepartments(result.data.Result);
@@ -32,7 +32,7 @@ const AddProject = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:3000/api/projects', formData)
+        axios.post(`${import.meta.env.VITE_API_URL}/api/projects`, formData)
             .then(result => {
                 if (result.data.Status) {
                     alert("Project created successfully!");

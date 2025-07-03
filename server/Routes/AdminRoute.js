@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import db from '../utils/db.js'; // Import the pool
+
 
 const router = express.Router();
 
@@ -24,7 +24,13 @@ const upload = multer({ storage });
 router.post("/adminlogin", (req, res) => {
   const sql = "SELECT * FROM admin WHERE email = ?";
   con.query(sql, [req.body.email], (err, result) => {
-    if (err) return res.json({ loginStatus: false, Error: "Query error" });
+    
+    if (err) {
+      console.error("❌ SQL error:", err);
+      return res.json({ loginStatus: false, Error: err.message });
+    }
+
+
     if (result.length > 0) {
       bcrypt.compare(req.body.password, result[0].password, (err, response) => {
         if (err) return res.json({ loginStatus: false, Error: "Password comparison error" });

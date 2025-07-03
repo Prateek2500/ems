@@ -15,7 +15,7 @@ const HRLogin = () => {
   const handleSubmit = (event) => {
     event.preventDefault()
     
-    axios.post('http://localhost:3000/hr/HR_login', values)
+    axios.post(`${import.meta.env.VITE_API_URL}/hr/HR_login`, values)
       .then(result => {
         if (result.data.loginStatus) {
             

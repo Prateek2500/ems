@@ -23,7 +23,7 @@ function AttendanceTab() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/auth/dept', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`, {
           withCredentials: true
         });
         if (response.data.Status) {
@@ -47,10 +47,10 @@ function AttendanceTab() {
           setAttendance([]);
 
           const [employeesRes, attendanceRes] = await Promise.all([
-            axios.get(`http://localhost:3000/auth/employee/dept/${selectedDept}`, {
+            axios.get(`${import.meta.env.VITE_API_URL}/auth/employee/dept/${selectedDept}`, {
               withCredentials: true
             }),
-            axios.get(`http://localhost:3000/auth/attendance/dept/${selectedDept}`, {
+            axios.get(`${import.meta.env.VITE_API_URL}/auth/attendance/dept/${selectedDept}`, {
               withCredentials: true
             })
           ]);

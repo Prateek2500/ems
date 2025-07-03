@@ -10,7 +10,7 @@ const EmployeeDetail = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get(`http://localhost:3000/auth/employee/${id}`)
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/employee/${id}`)
       .then(result => {
         if (result.data.Status && result.data.Result) {
           setEmployee(result.data.Result);
@@ -21,7 +21,7 @@ const EmployeeDetail = () => {
   }, [id]);
 
   const handleLogout = () => {
-    axios.get('http://localhost:3000/auth/logout')
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/logout`)
       .then(result => {
         if (result.data.Status) {
           localStorage.removeItem("valid");

@@ -29,7 +29,7 @@ const EmployeeAttendance = () => {
     setError("");
     try {
       const res = await axios.get(
-        "http://localhost:3000/employee/attendance/history",
+        `${import.meta.env.VITE_API_URL}/employee/attendance/history`,
         { withCredentials: true }
       );
       if (res.data.Status && Array.isArray(res.data.Result)) {
@@ -64,7 +64,7 @@ const EmployeeAttendance = () => {
     setError("");
     try {
       const res = await axios.post(
-        "http://localhost:3000/employee/attendance",
+        `${import.meta.env.VITE_API_URL}/employee/attendance`,
         { status: statusValue },
         { withCredentials: true }
       );
@@ -86,7 +86,7 @@ const EmployeeAttendance = () => {
     setError("");
     try {
       const res = await axios.delete(
-        "http://localhost:3000/employee/attendance/reset",
+        `${import.meta.env.VITE_API_URL}/employee/attendance/reset`,
         { withCredentials: true }
       );
       if (res.data.Status) {

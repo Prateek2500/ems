@@ -14,8 +14,8 @@ const AddEmployee = () => {
    
     address: "",
     dept_id: "",
-    designation: "",      // Added for Office Details
-    experience: "",       // Added for Office Details
+    designation: "",      
+    experience: "",       
     image: "",
     dob: "",
     age: "",
@@ -42,7 +42,7 @@ const AddEmployee = () => {
 
   // Fetch department list
   useEffect(() => {
-    axios.get("http://localhost:3000/auth/dept")
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`)
       .then(res => {
         if (res.data.Status) setDept(res.data.Result);
       })
@@ -128,7 +128,7 @@ const AddEmployee = () => {
     formData.append("aadhar_number", employee.aadhar_number);
 
     axios
-      .post("http://localhost:3000/auth/add_employee", formData)
+      .post(`${import.meta.env.VITE_API_URL}/auth/add_employee`, formData)
       .then((result) => {
         if (result.data.Status) {
           navigate("/dashboard/employee");

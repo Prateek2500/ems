@@ -8,7 +8,7 @@ const AddDept = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        axios.post('http://localhost:3000/auth/add_dept', {dept})
+        axios.post(`${import.meta.env.VITE_API_URL}/auth/add_dept`, {dept})
         .then(result => {
             if(result.data.Status) {
                 navigate('/dashboard/dept')

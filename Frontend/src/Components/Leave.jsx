@@ -17,7 +17,7 @@ const Leave = () => {
   setLoading(true);
   try {
     const res = await axios.get(
-      "http://localhost:3000/employee/leave/history",
+      `${import.meta.env.VITE_API_URL}/employee/leave/history`,
       { withCredentials: true }
     );
     
@@ -47,7 +47,7 @@ const Leave = () => {
     }
     try {
       const res = await axios.post(
-        "http://localhost:3000/employee/apply_leave",
+        `${import.meta.env.VITE_API_URL}/employee/apply_leave`,
         {
           start_date: startDate.toISOString().slice(0, 10),
           end_date: endDate.toISOString().slice(0, 10),

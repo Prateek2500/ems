@@ -18,7 +18,7 @@ const SetSalary = () => {
   const totalDaysInMonth = getDaysInMonth(year, month);
 
   useEffect(() => {
-    axios.get("http://localhost:3000/auth/employee")
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/employee`)
       .then((res) => {
         if (res.data.Status) setEmployee(res.data.Result);
         else alert(res.data.Error);
@@ -31,7 +31,7 @@ const SetSalary = () => {
       for (const e of employee) {
         try {
           const res = await axios.get(
-            `http://localhost:3000/hr/attendance/present/${e.id}/${month}`
+            `${import.meta.env.VITE_API_URL}/hr/attendance/present/${e.id}/${month}`
           );
           if (res.data.Status) {
             data[e.id] = res.data.Result.length;
@@ -62,7 +62,7 @@ const SetSalary = () => {
 
   const handleSalaryUpdate = async (id) => {
     try {
-      const res = await axios.post(`http://localhost:3000/hr/update_salary/${id}`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/hr/update_salary/${id}`, {
         salary: salaryInput,
       });
 
@@ -71,7 +71,7 @@ const SetSalary = () => {
         setEditingSalaryId(null);
         setSalaryInput("");
         // Refetch employees
-        const result = await axios.get("http://localhost:3000/auth/employee");
+        const result = await axios.get(`${import.meta.env.VITE_API_URL}/auth/employee`);
         if (result.data.Status) setEmployee(result.data.Result);
       } else {
         alert("Error: " + res.data.Error);

@@ -9,7 +9,7 @@ const Sidebar = ({ role, employee }) => {
   const handleLogout = () => {
     if (role === "admin") {
       // For admin logout
-      axios.get("http://localhost:3000/auth/logout").then((result) => {
+      axios.get(`${import.meta.env.VITE_API_URL}/auth/logout`).then((result) => {
         if (result.data.Status) {
           localStorage.removeItem("valid");
           navigate("/");
@@ -85,7 +85,7 @@ const Sidebar = ({ role, employee }) => {
               title="View Profile"
             >
               <img
-                src={`http://localhost:3000/Images/${employee.image}`}
+                src={`${import.meta.env.VITE_API_URL}/Images/${employee.image}`}
                 alt="Profile"
                 className="img-fluid rounded-circle mb-3"
                 style={{ width: "100px", height: "100px", objectFit: "cover" }}
@@ -134,7 +134,7 @@ const Sidebar = ({ role, employee }) => {
               title="View Profile"
             >
               <img
-                src={`http://localhost:3000/Images/${employee.image}`}
+                src={`${import.meta.env.VITE_API_URL}/Images/${employee.image}`}
                 alt="Profile"
                 className="img-fluid rounded-circle mb-3"
                 style={{ width: "100px", height: "100px", objectFit: "cover" }}

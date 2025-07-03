@@ -8,7 +8,7 @@ const Employee = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/auth/employee")
+      .get(`${import.meta.env.VITE_API_URL}/auth/employee`)
       .then((result) => {
         if (result.data.Status) {
           setEmployee(result.data.Result);
@@ -21,7 +21,7 @@ const Employee = () => {
 
 const handleDelete = (id) => {
   axios
-    .delete(`http://localhost:3000/auth/delete_employee/${id}`)
+    .delete(`${import.meta.env.VITE_API_URL}/auth/delete_employee/${id}`)
     .then((result) => {
       if (result.data.Status) {
         // Remove the deleted employee from the state without reloading the page
@@ -76,7 +76,7 @@ const handleDelete = (id) => {
                 <td>{e.name}</td>
                 <td>
                   <img
-                    src={`http://localhost:3000/Images/${e.image}`}
+                    src={`${import.meta.env.VITE_API_URL}/Images/${e.image}`}
                     className="employee_image"
                     alt={e.name}
                     style={{

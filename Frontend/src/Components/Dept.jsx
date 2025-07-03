@@ -8,7 +8,7 @@ const Dept = () => {
     const [dept, setDept] = useState([])
 
     useEffect(()=> {
-        axios.get('http://localhost:3000/auth/dept')
+        axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`)
         .then(result => {
             if(result.data.Status) {
                 setDept(result.data.Result);

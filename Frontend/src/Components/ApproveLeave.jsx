@@ -10,7 +10,7 @@ const ApproveLeave = () => {
 
   // Fetch departments on mount
   useEffect(() => {
-    axios.get("http://localhost:3000/auth/dept", { withCredentials: true })
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/dept`, { withCredentials: true })
       .then(res => {
         if (res.data.Status) setDepartments(res.data.Result);
       });
@@ -20,7 +20,7 @@ const ApproveLeave = () => {
   useEffect(() => {
     if (!selectedDept) return;
     setLoading(true);
-    axios.get(`http://localhost:3000/auth/leaves/${selectedDept}`, { withCredentials: true })
+    axios.get(`${import.meta.env.VITE_API_URL}/auth/leaves/${selectedDept}`, { withCredentials: true })
       .then(res => {
         if (res.data.Status) setLeaves(res.data.Result);
         else setLeaves([]);
@@ -38,7 +38,7 @@ const ApproveLeave = () => {
 
   try {
     const res = await axios.post(
-      `http://localhost:3000/auth/leave_action`,
+      `${import.meta.env.VITE_API_URL}/auth/leave_action`,
       { leave_id, status: action },
       { withCredentials: true }
     );
@@ -46,7 +46,7 @@ const ApproveLeave = () => {
     
     // Re-fetch to confirm server state (optional but recommended)
     const { data } = await axios.get(
-      `http://localhost:3000/auth/leaves/${selectedDept}`, 
+      `${import.meta.env.VITE_API_URL}/auth/leaves/${selectedDept}`, 
       { withCredentials: true }
     );
     if (data.Status) setLeaves(data.Result);
