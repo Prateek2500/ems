@@ -16,7 +16,6 @@ const EmployeeAttendance = () => {
 
   const navigate = useNavigate();
 
-  // Today's date in IST (YYYY-MM-DD)
   const today = getISTDateString();
 
   useEffect(() => {
@@ -27,11 +26,25 @@ const EmployeeAttendance = () => {
   const fetchAttendance = async () => {
     setLoading(true);
     setError("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication token missing. Please login again.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_API_URL}/employee/attendance/history`,
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
+
       if (res.data.Status && Array.isArray(res.data.Result)) {
         setAttendance(res.data.Result);
       } else {
@@ -47,11 +60,9 @@ const EmployeeAttendance = () => {
     }
   };
 
-  // Compute today's marked status in IST
   useEffect(() => {
     const todayRecord = attendance.find((record) => {
       if (!record.date) return false;
-      // Convert UTC date to IST date string
       const recordDateIST = new Date(record.date + "T00:00:00Z").toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
       return recordDateIST === today;
     });
@@ -62,12 +73,26 @@ const EmployeeAttendance = () => {
   const markAttendance = async (statusValue) => {
     setMarking(true);
     setError("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication token missing. Please login again.");
+      setMarking(false);
+      return;
+    }
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/employee/attendance`,
         { status: statusValue },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
+
       if (res.data.Status) {
         await fetchAttendance();
       } else {
@@ -84,11 +109,25 @@ const EmployeeAttendance = () => {
   const resetTodayAttendance = async () => {
     setMarking(true);
     setError("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Authentication token missing. Please login again.");
+      setMarking(false);
+      return;
+    }
+
     try {
       const res = await axios.delete(
         `${import.meta.env.VITE_API_URL}/employee/attendance/reset`,
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
+
       if (res.data.Status) {
         setTodayMarkedStatus(null);
         await fetchAttendance();
@@ -107,7 +146,6 @@ const EmployeeAttendance = () => {
     <div className="container mt-4">
       <h3 className="text-center mb-4">Employee Attendance</h3>
 
-      {/* Show today's date in IST */}
       <div className="text-center mb-3">
         <strong>Today's Date (IST): {today}</strong>
       </div>
@@ -142,7 +180,6 @@ const EmployeeAttendance = () => {
         </div>
       )}
 
-      {/* Attendance table is always shown after loading */}
       {!loading && (
         <div className="card shadow">
           <div className="card-header bg-primary text-white">
@@ -194,7 +231,6 @@ const EmployeeAttendance = () => {
         </div>
       )}
 
-      {/* Apply for Leave Button */}
       <div className="text-center mt-4">
         <button
           className="btn btn-primary"
