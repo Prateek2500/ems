@@ -13,19 +13,23 @@ const EmployeeLogin = () => {
   axios.defaults.withCredentials = true
 
   const handleSubmit = (event) => {
-    event.preventDefault()
-    axios.post(`${import.meta.env.VITE_API_URL}/employee/employee_login`, values)
-      .then(result => {
-        if (result.data.loginStatus) {
-          localStorage.setItem("valid", true)
-          localStorage.setItem("employee_id", result.data.id)
-          navigate('/employee_dashboard/employee_detail/' + result.data.id)
-        } else {
-          setError(result.data.Error)
-        }
-      })
-      .catch(err => console.log(err))
-  }
+  event.preventDefault();
+  axios.post(`${import.meta.env.VITE_API_URL}/employee/employee_login`, values)
+    .then(result => {
+      if (result.data.loginStatus && result.data.token) {
+        localStorage.setItem("token", result.data.token); // ✅ Save the JWT
+        localStorage.setItem("valid", true);
+        localStorage.setItem("employee_id", result.data.id);
+        navigate('/employee_dashboard/employee_detail/' + result.data.id);
+      } else {
+        setError(result.data.Error || "Login failed.");
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      setError("Server error. Try again later.");
+    });
+};
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-500 to-teal-400">
