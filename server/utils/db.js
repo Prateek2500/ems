@@ -1,15 +1,19 @@
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
-dotenv.config(); 
+dotenv.config();
 
-const con = mysql.createConnection({
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
-  user: process.env.DB_USER,
+  user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10, // you can adjust this
+  queueLimit: 0
 });
+
 
 con.connect(err => {
   if (err) {
@@ -19,4 +23,4 @@ con.connect(err => {
   }
 });
 
-export default con;
+export default pool;

@@ -1,425 +1,203 @@
 import express from "express";
-import con from "../utils/db.js";
+import pool from "../utils/db.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-
 const router = express.Router();
 
-// Image Upload Configuration
+// IMAGE UPLOAD CONFIG
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "Public/Images");
+    const dir = path.join("Public", "Images");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname));
+    cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 const upload = multer({ storage });
 
-// Admin Login
-router.post("/adminlogin", (req, res) => {
-  const sql = "SELECT * FROM admin WHERE email = ?";
-  con.query(sql, [req.body.email], (err, result) => {
-    
-    if (err) {
-      console.error("❌ SQL error:", err);
-      return res.json({ loginStatus: false, Error: err.message });
-    }
+// ADMIN LOGIN
+router.post("/adminlogin", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM admin WHERE email = ?", [req.body.email]);
 
-
-    if (result.length > 0) {
-      bcrypt.compare(req.body.password, result[0].password, (err, response) => {
-        if (err) return res.json({ loginStatus: false, Error: "Password comparison error" });
-        if (response) {
-          const token = jwt.sign(
-            { role: "admin", email: result[0].email, id: result[0].id, name: result[0].name },
-            "jwt_secret_key",
-            { expiresIn: "1d" }
-          );
-          res.cookie("token", token);
-          return res.json({ loginStatus: true, id: result[0].id, name: result[0].name });
-        }
-        return res.json({ loginStatus: false, Error: "Wrong password" });
-      });
+    if (rows.length > 0) {
+      const match = await bcrypt.compare(req.body.password, rows[0].password);
+      if (match) {
+        const token = jwt.sign(
+          { role: "admin", email: rows[0].email, id: rows[0].id, name: rows[0].name },
+          "jwt_secret_key",
+          { expiresIn: "1d" }
+        );
+        res.cookie("token", token);
+        return res.json({ loginStatus: true, id: rows[0].id, name: rows[0].name });
+      }
+      return res.json({ loginStatus: false, Error: "Wrong password" });
     } else {
       return res.json({ loginStatus: false, Error: "Email not found" });
     }
-  });
+  } catch (err) {
+    console.error("❌ SQL error:", err);
+    return res.json({ loginStatus: false, Error: err.message });
+  }
 });
 
-// Department Routes
-router.get("/dept", (req, res) => {
-  const sql = "SELECT * FROM dept";
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error" });
-    return res.json({ Status: true, Result: result });
-  });
+// DEPARTMENT ROUTES
+router.get("/dept", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM dept");
+    return res.json({ Status: true, Result: rows });
+  } catch {
+    return res.json({ Status: false, Error: "Query Error" });
+  }
 });
 
-router.post("/add_dept", (req, res) => {
-  const sql = "INSERT INTO dept (`name`) VALUES (?)";
-  con.query(sql, [req.body.dept], (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error" });
+router.post("/add_dept", async (req, res) => {
+  try {
+    await pool.query("INSERT INTO dept (`name`) VALUES (?)", [req.body.dept]);
     return res.json({ Status: true });
-  });
+  } catch {
+    return res.json({ Status: false, Error: "Query Error" });
+  }
 });
 
-// Employee Management Routes
-router.post("/add_employee", upload.single("image"), (req, res) => {
-  const sql = `INSERT INTO employee 
-    (name, email, password, address, salary, image, dept_id, age, gender,
-     account_no, bank_name, branch, university, yop, father_name, mother_name, designation, experience,
-     emergency_contact, alternate_contact, aadhar_number, pan_number, degree, edu_branch, gradepoint) 
-    VALUES (?)`;
-
-  bcrypt.hash(req.body.password, 10, (err, hash) => {
-    if (err) return res.json({ Status: false, Error: "Hashing error" });
+// ADD EMPLOYEE
+router.post("/add_employee", upload.single("image"), async (req, res) => {
+  try {
+    const hash = await bcrypt.hash(req.body.password, 10);
     const imageName = req.file ? req.file.filename : null;
     const values = [
-      req.body.name,
-      req.body.email,
-      hash,
-      req.body.address,
-      req.body.salary,
-      imageName,
-      req.body.dept_id,
-      req.body.age,
-      req.body.gender,
-      req.body.account_no,
-      req.body.bank_name,
-      req.body.branch,
-      req.body.university,
-      req.body.yop,
-      req.body.father_name,
-      req.body.mother_name,
-      req.body.designation,
-      req.body.experience,
-      req.body.emergency_contact,
-      req.body.alternate_contact,
-      req.body.aadhar_number,
-      req.body.pan_number,
-      req.body.degree,
-      req.body.edu_branch,
-      req.body.gradepoint,
+      req.body.name, req.body.email, hash, req.body.address, req.body.salary,
+      imageName, req.body.dept_id, req.body.age, req.body.gender,
+      req.body.account_no, req.body.bank_name, req.body.branch,
+      req.body.university, req.body.yop, req.body.father_name,
+      req.body.mother_name, req.body.designation, req.body.experience,
+      req.body.emergency_contact, req.body.alternate_contact,
+      req.body.aadhar_number, req.body.pan_number, req.body.degree,
+      req.body.edu_branch, req.body.gradepoint
     ];
-    con.query(sql, [values], (err, result) => {
-      if (err) return res.json({ Status: false, Error: "Query error: " + err });
-      return res.json({ Status: true });
-    });
-  });
+    await pool.query(
+      `INSERT INTO employee 
+      (name, email, password, address, salary, image, dept_id, age, gender,
+       account_no, bank_name, branch, university, yop, father_name, mother_name, designation, experience,
+       emergency_contact, alternate_contact, aadhar_number, pan_number, degree, edu_branch, gradepoint) 
+      VALUES (?)`, [values]
+    );
+    return res.json({ Status: true });
+  } catch (err) {
+    return res.json({ Status: false, Error: "Query error: " + err.message });
+  }
 });
 
-router.put("/edit_employee/:id", upload.single("image"), (req, res) => {
+// EDIT EMPLOYEE
+router.put("/edit_employee/:id", upload.single("image"), async (req, res) => {
   const id = req.params.id;
   const allowedFields = {
-    "name": "string",
-    "email": "string",
-    "salary": "number",
-    "address": "string",
-    "dept_id": "number",
-    "age": "number",
-    "gender": "string",
-    "account_no": "string",
-    "bank_name": "string",
-    "branch": "string",
-    "university": "string",
-    "yop": "number",
-    "father_name": "string",
-    "mother_name": "string",
-    "emergency_contact": "string",
-    "alternate_contact": "string",
-    "aadhar_number": "string",
-    "pan_number": "string",
-    "degree": "string",
-    "edu_branch": "string",
-    "gradepoint": "number"
+    name: "string", email: "string", salary: "number", address: "string",
+    dept_id: "number", age: "number", gender: "string", account_no: "string",
+    bank_name: "string", branch: "string", university: "string", yop: "number",
+    father_name: "string", mother_name: "string", emergency_contact: "string",
+    alternate_contact: "string", aadhar_number: "string", pan_number: "string",
+    degree: "string", edu_branch: "string", gradepoint: "number"
   };
-  
-  const updateFields = {};
-  const validationErrors = [];
-  
-  Object.keys(req.body).forEach(field => {
-    if (allowedFields.hasOwnProperty(field)) {
-      const value = req.body[field];
-      const expectedType = allowedFields[field];
-      
-      if (expectedType === "number" && isNaN(Number(value))) {
-        validationErrors.push(`Invalid number format for ${field}`);
-      } else {
-        updateFields[field] = expectedType === "number" 
-          ? Number(value) 
-          : value.toString();
-      }
-    }
-  });
-  
-  if (validationErrors.length > 0) {
-    return res.status(400).json({
-      Status: false,
-      Error: "Validation failed",
-      Details: validationErrors
-    });
-  }
-  
-  if (req.file) {
-    updateFields.image = req.file.filename;
-    con.query("SELECT image FROM employee WHERE id = ?", [id], (err, result) => {
-      if (!err && result[0]?.image) {
-        fs.unlink(`./public/images/${result[0].image}`, (unlinkErr) => {
-          if (unlinkErr) console.error("Image delete error:", unlinkErr);
-        });
+  try {
+    const updateFields = {};
+    Object.keys(req.body).forEach(field => {
+      if (allowedFields[field]) {
+        updateFields[field] = allowedFields[field] === "number" ? Number(req.body[field]) : req.body[field].toString();
       }
     });
-  }
-  
-  if (Object.keys(updateFields).length === 0) {
-    return res.status(400).json({ 
-      Status: false, 
-      Error: "No valid fields to update" 
-    });
-  }
-  
-  const setClause = Object.keys(updateFields)
-    .map(field => `${field} = ?`)
-    .join(', ');
-  
-  const values = [...Object.values(updateFields), id];
-  const sql = `UPDATE employee SET ${setClause} WHERE id = ?`;
-  
-  con.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("SQL Error:", err);
-      return res.status(500).json({
-        Status: false,
-        Error: "Database operation failed",
-        SQL: sql,
-        Values: values
-      });
+
+    if (req.file) {
+      updateFields.image = req.file.filename;
+      const [rows] = await pool.query("SELECT image FROM employee WHERE id = ?", [id]);
+      if (rows[0]?.image) {
+        fs.unlink(path.join("Public", "Images", rows[0].image), () => {});
+      }
     }
-    
-    return res.json({ 
-      Status: true,
-      Message: "Employee updated successfully",
-      UpdatedFields: Object.keys(updateFields),
-      AffectedRows: result.affectedRows
-    });
-  });
+
+    if (!Object.keys(updateFields).length) {
+      return res.status(400).json({ Status: false, Error: "No valid fields to update" });
+    }
+
+    const setClause = Object.keys(updateFields).map(f => `${f} = ?`).join(", ");
+    await pool.query(`UPDATE employee SET ${setClause} WHERE id = ?`, [...Object.values(updateFields), id]);
+
+    return res.json({ Status: true, Message: "Employee updated" });
+  } catch (err) {
+    return res.status(500).json({ Status: false, Error: err.message });
+  }
 });
 
-router.delete("/delete_employee/:id", (req, res) => {
+// DELETE EMPLOYEE
+router.delete("/delete_employee/:id", async (req, res) => {
   const id = req.params.id;
-  
-  con.beginTransaction(err => {
-    if (err) {
-      return res.status(500).json({
-        Status: false,
-        Error: "Transaction start failed: " + err.message
-      });
+  try {
+    const [rows] = await pool.query("SELECT image FROM employee WHERE id = ?", [id]);
+    if (!rows.length) return res.status(404).json({ Status: false, Error: "Employee not found" });
+
+    await pool.query("DELETE FROM leaves WHERE employee_id = ?", [id]);
+    await pool.query("DELETE FROM attendance WHERE employee_id = ?", [id]);
+    await pool.query("DELETE FROM employee WHERE id = ?", [id]);
+
+    if (rows[0].image) {
+      fs.unlink(path.join("Public", "Images", rows[0].image), () => {});
     }
-
-    con.query("SELECT image FROM employee WHERE id = ?", [id], (fetchErr, fetchResult) => {
-      if (fetchErr) {
-        return con.rollback(() => {
-          res.status(500).json({
-            Status: false,
-            Error: "Fetch error: " + fetchErr.message
-          });
-        });
-      }
-
-      if (fetchResult.length === 0) {
-        return con.rollback(() => {
-          res.status(404).json({
-            Status: false,
-            Error: "Employee not found"
-          });
-        });
-      }
-
-      const imageFile = fetchResult[0].image;
-      const childTables = ["leaves", "attendance"];
-      const deleteOperations = [];
-
-      childTables.forEach(table => {
-        deleteOperations.push(new Promise((resolve, reject) => {
-          con.query(`DELETE FROM ${table} WHERE employee_id = ?`, [id], (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
-        }));
-      });
-
-      Promise.all(deleteOperations)
-        .then(() => {
-          con.query("DELETE FROM employee WHERE id = ?", [id], (deleteErr, deleteResult) => {
-            if (deleteErr) {
-              return con.rollback(() => {
-                res.status(500).json({
-                  Status: false,
-                  Error: "Delete failed: " + deleteErr.message
-                });
-              });
-            }
-
-            con.commit(err => {
-              if (err) {
-                return con.rollback(() => {
-                  res.status(500).json({
-                    Status: false,
-                    Error: "Commit failed: " + err.message
-                  });
-                });
-              }
-
-              if (imageFile) {
-                const imagePath = path.join('../public/images', imageFile);
-                fs.unlink(imagePath, unlinkErr => {
-                  if (unlinkErr) console.error("Image delete error:", unlinkErr);
-                });
-              }
-
-              res.json({
-                Status: true,
-                Message: "Employee and all related data deleted successfully"
-              });
-            });
-          });
-        })
-        .catch(childErr => {
-          con.rollback(() => {
-            res.status(500).json({
-              Status: false,
-              Error: "Child table deletion failed: " + childErr.message
-            });
-          });
-        });
-    });
-  });
+    return res.json({ Status: true, Message: "Employee deleted" });
+  } catch (err) {
+    return res.status(500).json({ Status: false, Error: err.message });
+  }
 });
 
-
-router.get("/employee", (req, res) => {
-  const sql = `SELECT e.*, d.name AS dept_name 
-    FROM employee e LEFT JOIN dept d ON e.dept_id = d.id`;
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error" });
-    return res.json({ Status: true, Result: result });
-  });
+// EMPLOYEE LIST
+router.get("/employee", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT e.*, d.name AS dept_name FROM employee e 
+       LEFT JOIN dept d ON e.dept_id = d.id`
+    );
+    return res.json({ Status: true, Result: rows });
+  } catch {
+    return res.json({ Status: false, Error: "Query Error" });
+  }
 });
 
-router.get("/employee/:id", (req, res) => {
-  const id = req.params.id;
-  const sql = `SELECT e.*, d.name AS dept_name 
-    FROM employee e LEFT JOIN dept d ON e.dept_id = d.id 
-    WHERE e.id = ?`;
-  con.query(sql, [id], (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error" });
-    if (result.length > 0) {
-      return res.json({
-        Status: true,
-        Result: { ...result[0], dept_id: result[0].dept_id?.toString() }
-      });
-    }
+// GET EMPLOYEE BY ID
+router.get("/employee/:id", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT e.*, d.name AS dept_name 
+       FROM employee e 
+       LEFT JOIN dept d ON e.dept_id = d.id 
+       WHERE e.id = ?`, [req.params.id]
+    );
+    if (rows.length) return res.json({ Status: true, Result: rows[0] });
     return res.json({ Status: false, Error: "Employee not found" });
-  });
+  } catch {
+    return res.json({ Status: false, Error: "Query Error" });
+  }
 });
 
-router.get("/employee/dept/:dept_id", (req, res) => {
-  const dept_id = req.params.dept_id;
-  const sql = `SELECT e.*, d.name AS dept_name 
-    FROM employee e LEFT JOIN dept d ON e.dept_id = d.id 
-    WHERE e.dept_id = ?`;
-  con.query(sql, [dept_id], (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Database query error", Details: err.message });
-    return res.json({
-      Status: true,
-      Result: result.map(emp => ({ ...emp, dept_id: emp.dept_id?.toString() }))
-    });
-  });
+// DASHBOARD STATS
+router.get("/admin_count", async (req, res) => {
+  const [rows] = await pool.query("SELECT COUNT(id) AS admin FROM admin");
+  return res.json({ Status: true, Result: rows });
+});
+router.get("/employee_count", async (req, res) => {
+  const [rows] = await pool.query("SELECT COUNT(id) AS employee FROM employee");
+  return res.json({ Status: true, Result: rows });
+});
+router.get("/salary_count", async (req, res) => {
+  const [rows] = await pool.query("SELECT SUM(salary) AS salaryOFEmp FROM employee");
+  return res.json({ Status: true, Result: rows });
 });
 
-// Dashboard Statistics
-router.get("/admin_count", (req, res) => {
-  const sql = "SELECT COUNT(id) AS admin FROM admin";
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error: " + err });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.get("/employee_count", (req, res) => {
-  const sql = "SELECT COUNT(id) AS employee FROM employee";
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error: " + err });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.get("/salary_count", (req, res) => {
-  const sql = "SELECT SUM(salary) AS salaryOFEmp FROM employee";
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error: " + err });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.get("/admin_records", (req, res) => {
-  const sql = "SELECT * FROM admin";
-  con.query(sql, (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error: " + err });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.get('/attendance/dept/:dept_id', (req, res) => {
-  const dept_id = req.params.dept_id;
-  const sql = `SELECT a.employee_id, a.attendance_date, a.status, e.name AS employee_name
-    FROM attendance a JOIN employee e ON a.employee_id = e.id
-    WHERE e.dept_id = ? ORDER BY a.attendance_date DESC`;
-  con.query(sql, [dept_id], (err, result) => {
-    if (err) return res.json({ Status: false, Error: "Query Error: " + err });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.get('/leaves/:deptId', (req, res) => {
-  const deptId = req.params.deptId;
-  const sql = `SELECT l.leave_id, l.employee_id, e.name AS employee_name,
-      l.start_date, l.end_date, l.leave_type, l.purpose, l.status
-    FROM leaves l JOIN employee e ON l.employee_id = e.id
-    WHERE e.dept_id = ? ORDER BY l.start_date DESC`;
-  con.query(sql, [deptId], (err, result) => {
-    if (err) return res.json({ Status: false, Error: err.message });
-    return res.json({ Status: true, Result: result });
-  });
-});
-
-router.post('/leave_action', (req, res) => {
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ Status: false, Error: "Not authenticated" });
-
-  jwt.verify(token, "jwt_secret_key", (err, decoded) => {
-    if (err) return res.status(403).json({ Status: false, Error: "Invalid token" });
-    
-    const { leave_id, status } = req.body;
-    if (!leave_id || !['approved', 'denied'].includes(status)) {
-      return res.status(400).json({ Status: false, Error: "Invalid input" });
-    }
-
-    const sql = `UPDATE leaves SET status = ? WHERE leave_id = ?`;
-    con.query(sql, [status, leave_id], (err, result) => {
-      if (err) return res.status(500).json({ Status: false, Error: "Database error", Details: err.message });
-      if (result.affectedRows === 0) return res.status(404).json({ Status: false, Error: "Leave not found" });
-      return res.json({ Status: true, Message: "Leave status updated" });
-    });
-  });
-});
-
-// Logout
+// LOGOUT
 router.get("/logout", (req, res) => {
   res.clearCookie("token");
   return res.json({ Status: true });
