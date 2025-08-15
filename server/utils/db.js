@@ -1,4 +1,4 @@
-import mysql from 'mysql2/promise';
+import mysql from 'mysql2';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,16 +10,16 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,
-  connectionLimit: 10, // you can adjust this
+  connectionLimit: 10, // up to 10 simultaneous connections
   queueLimit: 0
 });
 
-
-con.connect(err => {
+pool.getConnection((err, connection) => {
   if (err) {
-    console.error("❌ MySQL connection error:", err);
+    console.error("❌ MySQL connection pool error:", err);
   } else {
-    console.log("✅ Connected to Clever Cloud MySQL database.");
+    console.log("✅ Connected to Clever Cloud MySQL database (Pool Ready).");
+    connection.release();
   }
 });
 
