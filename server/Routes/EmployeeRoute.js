@@ -13,48 +13,43 @@ router.use(cookieParser());
 router.post("/employee_login", (req, res) => {
     const sql = "SELECT * FROM employee WHERE email = ?";
     pool.query(sql, [req.body.email], (err, result) => {
-        if (err) return res.json({ loginStatus: false, Error: "Query error" });
+        if (err) {
+            return res.json({ loginStatus: false, Error: "Query error" });
+        }
 
-        if (result.length > 0) {
-            bcrypt.compare(req.body.password, result[0].password, (err, response) => {
-                if (err) return res.json({ loginStatus: false, Error: "Wrong Password" });
-                if(response) {
-                    const token = jwt.sign(
-                        { 
-                            role: "employee", 
-                            email: result[0].email, 
-                            id: result[0].id,
-                            name: result[0].name 
-                        },
-                        "jwt_secret_key",
-                        { expiresIn: "1d" }
-                    );
-                    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'None' }); // optional for security
-
-return res.json({ 
-  loginStatus: true, 
-  token, // ✅ include the token in JSON response
-  id: result[0].id,
-  name: result[0].name
-});
-
-                } else {
-            bcrypt.compare(req.body.password, result[0].password, (err, match) => {
-                if (err || !match) {
-                    return res.json({ loginStatus: false, Error: "Wrong Password" });
-                }
-
-                const token = jwt.sign(
-                    { role: "employee", email: result[0].email, id: result[0].id, name: result[0].name },
-                    "jwt_secret_key",
-                    { expiresIn: "1d" }
-                );
-                res.cookie('token', token, { httpOnly: true });
-                return res.json({ loginStatus: true, id: result[0].id, name: result[0].name });
-            });
-        } else {
+        if (result.length === 0) {
             return res.json({ loginStatus: false, Error: "Wrong email or password" });
         }
+
+        bcrypt.compare(req.body.password, result[0].password, (err, match) => {
+            if (err || !match) {
+                return res.json({ loginStatus: false, Error: "Wrong email or password" });
+            }
+
+            const token = jwt.sign(
+                {
+                    role: "employee",
+                    email: result[0].email,
+                    id: result[0].id,
+                    name: result[0].name
+                },
+                "jwt_secret_key",
+                { expiresIn: "1d" }
+            );
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None'
+            });
+
+            return res.json({
+                loginStatus: true,
+                token, // so frontend can also store if needed
+                id: result[0].id,
+                name: result[0].name
+            });
+        });
     });
 });
 
